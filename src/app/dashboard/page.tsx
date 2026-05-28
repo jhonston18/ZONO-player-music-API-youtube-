@@ -3,18 +3,24 @@
 
 
 import TimeLineMusic from '@/app/components/time-line-music'
+import SideBar from '@/app/components/sidebar'
 
 import { TextAlignJustify, Play, SkipBack, SkipForward, Heart, Repeat, Pause } from "lucide-react";
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 
+
 export default function Dashboard() {
+
 
     const [handlerPlayer, setHandlerPlayer] = useState(false); // manejador de icono player y pause
     const [timeMusicFinish, setTimeMusic] = useState('00:00'); // tiempo final inicial --> 00:00
     const [currentTimeFormatted, setCurrentTimeFormatted] = useState('00:00'); // tiempo de progreso
     const [progressPercentage, setProgressPercentage] = useState('0%');
+    const [isOpen, setIsOpen] = useState(false); //false --> cerrado, true --> abierto
+
+    const onClose = () => setIsOpen(false);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -22,7 +28,7 @@ export default function Dashboard() {
         if (isNaN(timeInSeconds)) return '00:00';
         const min = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
         const seg = (Math.floor(timeInSeconds % 60)).toString().padStart(2, '0');
-        
+
         return `${min}:${seg}`;
     };
 
@@ -50,7 +56,7 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        audioRef.current = new Audio('/music/audio1.mp3');
+        audioRef.current = new Audio('/music/audio2.mp3');
         const audio = audioRef.current;
 
         const handleLoadedMetadata = () => {
@@ -83,7 +89,7 @@ export default function Dashboard() {
         };
     }, []);
 
-        const playerAudio = () => {
+    const playerAudio = () => {
         if (!audioRef.current) return;
         setHandlerPlayer(true);
         audioRef.current.play().catch(err => console.log("Error al reproducir:", err));
@@ -101,11 +107,19 @@ export default function Dashboard() {
 
 
     return (
-        <div className="min-h-screen bg-[url('https://i1-e.pinimg.com/1200x/aa/53/8f/aa538fb499dc42e4727b63f19e32525c.jpg')] bg-cover bg-center ">
+        <div className="bg-[url('https://i1-e.pinimg.com/1200x/aa/53/8f/aa538fb499dc42e4727b63f19e32525c.jpg')] bg-cover bg-center ">
+            
+            <div 
+                className={`fixed inset-0 z-20 transition-opacity duration-300 ${isOpen ? 'opacity-100 bg-black/40 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setIsOpen(false)}
+            />
+            <SideBar isOpen={isOpen} onClose={() => setIsOpen(false)} />
             <div className='min-h-screen backdrop-blur-2xl bg-black/20'>
                 <div className='relative'>
                     <div className='flex justify-between items-center px-4 py-3 text-white'>
-                        <TextAlignJustify className='size-8 cursor-pointer' />
+                        <button className={`p-2 rounded-md size-8 cursor-pointer`} onClick={() => setIsOpen(true)}>
+                            <TextAlignJustify className="size-9 active:text-gray-500" />
+                        </button>
                         <h2 className='text-xl font-medium'>My Music</h2>
                         <div className='w-10 h-10 rounded-full overflow-hidden relative'>
                             <Image
