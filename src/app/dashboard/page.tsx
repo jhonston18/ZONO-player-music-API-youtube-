@@ -10,6 +10,27 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 
+const albumMusic = [
+    { 
+        id: 1, 
+        title: `Lana del rey - Salvatore (lyrics)`, 
+        image: 'https://i1-e.pinimg.com/1200x/aa/53/8f/aa538fb499dc42e4727b63f19e32525c.jpg', 
+        audio: '/music/audio1.mp3' 
+    },
+    { 
+        id: 2, 
+        title: `Nothing's gonna hurt you baby - Cicarettes (lyrics)`, 
+        image: 'https://i1-e.pinimg.com/1200x/aa/53/8f/aa538fb499dc42e4727b63f19e32525c.jpg', 
+        audio: '/music/audio2.mp3' 
+    },
+    { 
+        id: 3, 
+        title: 'Sweet - Cigarettes (lyrics)', 
+        image: 'https://i1-e.pinimg.com/1200x/aa/53/8f/aa538fb499dc42e4727b63f19e32525c.jpg', 
+        audio: '/music/audio3.mp3' 
+    }
+]
+
 
 export default function Dashboard() {
 
