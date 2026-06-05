@@ -3,143 +3,215 @@
 import Reproductor from '@/app/components/reproductor'
 import ReproductorMobile from '@/app/components/reproductor-mobile'
 
+import { useDataMusicStore, Musica } from "../store/dataMusicStore";
+
+
 import { TextAlignJustify, Play, SkipBack, SkipForward, Heart, Repeat, Pause, ChevronDown } from "lucide-react";
-import Image from 'next/image';
+
 import { useEffect, useRef, useState } from 'react';
 
-import type { MouseEvent } from 'react';
 
 
 
 
+// 1. Tipado estricto para evitar el uso de 'any'
+interface YTPlayer {
+    playVideo: () => void;
+    pauseVideo: () => void;
+    seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+    getCurrentTime: () => number;
+    getDuration: () => number;
+    destroy: () => void;
+}
 
+interface YTEvent {
+    target: YTPlayer;
+    data: number;
+}
 
-export default function FloatingReproductor() {
-
-    const [handlerPlayer, setHandlerPlayer] = useState(false); // manejador de icono player y pause
-    const [timeMusicFinish, setTimeMusic] = useState('00:00'); // tiempo final inicial --> 00:00
-    const [currentTimeFormatted, setCurrentTimeFormatted] = useState('00:00'); // tiempo de progreso
-    const [progressPercentage, setProgressPercentage] = useState('0%');
-
-    const [hiddenVideo, setHiddenVideo] = useState(true); // falso --> video visible, verdadero --> video oculto
-
-
-
-
-    const audioRef = useRef < HTMLAudioElement | null > (null);
-
-    const formatTime = (timeInSeconds: number) => {
-        if (isNaN(timeInSeconds)) return '00:00';
-        const min = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
-        const seg = (Math.floor(timeInSeconds % 60)).toString().padStart(2, '0');
-
-        return `${min}:${seg}`;
-    };
-
-    const formatTimeProgress = (clickX: number, barWidth: number) => {
-        if (!audioRef.current) return;
-        const duration = audioRef.current.duration; //duracion del audio
-        if (!duration || isNaN(duration) || barWidth <= 0) return;
-
-        const percentage = Math.min(Math.max((clickX / barWidth) * 100, 0), 100); //calculo del porcentaje basado en la posicion del click
-        setProgressPercentage(`${percentage.toFixed(2)}%`);
-
-        const newTime = (percentage / 100) * duration;
-        audioRef.current.currentTime = newTime;
-        setCurrentTimeFormatted(formatTime(newTime));
-    };
-
-    const handleBarClick = (event: MouseEvent<HTMLDivElement>) => {
-        const dimensions = event.currentTarget.getBoundingClientRect(); //me brinda las dimensiones del elemento
-        const clickX = event.clientX - dimensions.left; //posicion del click dentro de la barra
-        const barWidth = dimensions.width; //ancho total de la barra, es decir el div padre
-        console.log('ClickX:', clickX, 'BarWidth:', barWidth);
-        console.log("Dimensiones: ", dimensions);
-        console.log("Event: ", event);
-        formatTimeProgress(clickX, barWidth);
-    };
-
-    useEffect(() => {
-        audioRef.current = new Audio('/music/audio2.mp3');
-        const audio = audioRef.current;
-
-        const handleLoadedMetadata = () => {
-            setTimeMusic(formatTime(audio.duration));
+declare global {
+    //esto le dice al compilador que la interfaz window ya existe de forma global, como una libreria externa
+    interface Window {
+        onYouTubeIframeAPIReady?: () => void;
+        YT?: {
+            Player: new (id: string, config: object) => YTPlayer;
+            PlayerState: {
+                PLAYING: number;
+                PAUSED: number;
+            };
         };
+    }
+}
 
-        const handleTimeUpdate = () => {
-            setCurrentTimeFormatted(formatTime(audio.currentTime));
-            if (audio.duration) {
-                const percentage = (audio.currentTime / audio.duration) * 100;
-                setProgressPercentage(`${percentage.toFixed(2)}%`);
-            }
-        };
-
-        const handleEnded = () => {
-            setHandlerPlayer(false);
-            setCurrentTimeFormatted('00:00');
-            setProgressPercentage('0%');
-        };
-
-        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('ended', handleEnded);
-
-        return () => {
-            audio.pause();
-            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
-            audio.removeEventListener('ended', handleEnded);
-        };
-    }, []);
+export default function CustomTimelinePlayer() {
 
 
-    useEffect(() => {
+    const { cancionActual, setCurrentTime, setDuration, setIsPlaying, isPlaying } = useDataMusicStore()
 
-        if(hiddenVideo){
-            document.body.style.overflow = 'auto'; // Permite el scroll
-        }
-        else{
-            document.body.style.overflow = 'hidden'; // Evita el scroll
-        }
-
-        return () => {
-            document.body.style.overflow = 'auto'; //por defecto el dashboard tiene scroll
-        }
-
-
-    }, [hiddenVideo]);
-
+    const videoId = cancionActual?.idMusica || "RYr96YYEaZY"
+    console.log("Este es el videoId: ", videoId)
+    console.log("Este es el: ", isPlaying)
     
 
-   
 
-    const playerAudio = () => {
-        if (!audioRef.current) return;
-        setHandlerPlayer(true);
-        audioRef.current.play().catch(err => console.log("Error al reproducir:", err));
+
+    // Guardamos la referencia del reproductor con su tipo correcto
+    const playerRef = useRef<YTPlayer | null>(null);
+    const iframeId = `yt-player-${videoId}`;
+
+    
+    const [hiddenVideo, setHiddenVideo] = useState(false); // falso --> video visible, verdadero --> video oculto
+
+    useEffect(() => {
+        // Función interna encargada de instanciar el reproductor de forma segura
+        const inicializarReproductor = () => {
+            if (!window.YT || !window.YT.Player) return; //la api (reproductor) ya se almaceno en windows?
+
+            //recibe dos parametros, el id del elemento html (reproductor) y un onjeto de configuracion
+            playerRef.current = new window.YT.Player(iframeId, {
+                //creamos el reproductor
+                videoId: videoId, //el id del video a cargar
+                playerVars: {
+                    //objeto para personalizar el reproductor
+                    controls: 0, // Oculta los controles nativos
+                    disablekb: 1, // Desactiva el teclado nativo
+                    modestbranding: 1, // Reduce la marca de YouTube
+                    rel: 0, // Evita videos recomendados de otros canales
+                    enablejsapi: 1, // ¡CRÍTICO! Permite leer tiempos y usar comandos
+                    playsinline: 1, // Evita pantalla completa automática en móviles
+                },
+                events: {
+                    //objeto que almacena funciones de devolucion de llamada cuando interacturamos con el reproductor
+
+                    onReady: (event: YTEvent) => {
+                        //se ejecuta cuando el reproductor ya cargo y esta listo para recibir comando
+
+                        // Asignamos la duración total de forma segura convirtiéndola a número
+                        setDuration(event.target.getDuration() || 0);
+                    },
+                    onStateChange: (event: YTEvent) => {
+                        //se ejecuta cada vez que ek estado de reproduccion cambia (pausa, play, etc)
+                        if (!window.YT) return;
+                        // Evaluamos los estados del reproductor
+                        if (event.data === window.YT.PlayerState.PLAYING) {
+                            // el reproductor esta reproduciendose?
+                            setIsPlaying(true); //actualizamos el estado a "si se esta reproduciendo el video"
+                        } else {
+                            setIsPlaying(false);
+                        }
+                    },
+                },
+            });
+        };
+
+        // Control de carga del Script: Evita que la función se pierda por asincronía
+        if (window.YT && window.YT.Player) {
+            // Si el script de YouTube ya existía en el navegador, inicializamos directo
+            inicializarReproductor();
+        } else {
+            // Si el script no existe, lo inyectamos dinámicamente
+            if (
+                !document.querySelector(
+                    'script[src="https://www.youtube.com/iframe_api"]'
+                )
+            ) {
+                const tag = document.createElement("script");
+                tag.src = "https://www.youtube.com/iframe_api";
+                const firstScriptTag = document.getElementsByTagName("script")[0]; //tomamos el primer script (padre)
+                firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag); //tomamos el elemento padre y
+                //colocamos el script nuevo (tag) justo despues del elemento anterior (firstScriptTag)
+            }
+
+            // Seteamos la función global por si el script termina de cargar después
+            window.onYouTubeIframeAPIReady = () => {
+                inicializarReproductor();
+            };
+        }
+
+        // Limpieza al desmontar el componente (Evita fugas de memoria en Next.js)
+        return () => {
+            if (
+                playerRef.current &&
+                typeof playerRef.current.destroy === "function"
+            ) {
+                playerRef.current.destroy();
+                playerRef.current = null;
+            }
+        };
+    }, [videoId, iframeId]);
+
+    // Loop encargado de sincronizar tu barra de tiempo (Timeline) en tiempo real
+    // Usamos un throttle para no escribir en el store a alta frecuencia
+    const lastSyncRef = useRef<number>(0);
+    // useEffect(() => {
+    //     let intervalId: NodeJS.Timeout;
+
+    //     if (isPlaying && playerRef.current) {
+    //         intervalId = setInterval(() => {
+    //             // Verificamos estrictamente que el método exista antes de invocarlo
+    //             if (
+    //                 playerRef.current &&
+    //                 typeof playerRef.current.getCurrentTime === "function"
+    //             ) {
+    //                 const tiempoActual = playerRef.current.getCurrentTime();
+    //                 const now = Date.now();
+    //                 // sólo sincronizamos con el store cada 1000ms para evitar re-renders excesivos
+    //                 if (now - lastSyncRef.current >= 1000) {
+    //                     setCurrentTime(tiempoActual);
+    //                     lastSyncRef.current = now;
+    //                 }
+    //             }
+    //         }, 250); // Consulta el progreso cada 250ms para mantener la UI fluida
+    //     }
+
+    //     return () => {
+    //         if (intervalId) clearInterval(intervalId);
+    //     };
+    // }, [isPlaying]);
+
+    // Manejadores de eventos de tus controles personalizados
+    const handleTogglePlay = (): void => {
+        if (!playerRef.current) return;
+
+        if (isPlaying) {
+            if (typeof playerRef.current.pauseVideo === "function")
+                playerRef.current.pauseVideo();
+        } else {
+            if (typeof playerRef.current.playVideo === "function")
+                playerRef.current.playVideo();
+        }
     };
 
-    const PauseAudio = () => {
-        if (!audioRef.current) return;
-        setHandlerPlayer(false);
-        audioRef.current.pause();
+    const handleTimelineChange = (
+        e: React.ChangeEvent<HTMLInputElement>
+    ): void => {
+        const nuevoSegundo = parseFloat(e.target.value); //parsefloat: convierte un string a decimal
+        setCurrentTime(nuevoSegundo);
+
+        if (playerRef.current && typeof playerRef.current.seekTo === "function") {
+            // El segundo parámetro 'true' permite que YouTube cargue el búfer de forma inmediata
+            playerRef.current.seekTo(nuevoSegundo, true);
+        }
     };
 
-    const ID_VIDEO = "RYr96YYEaZY"
+    const formatTime = (timeInSeconds: number): string => {
+        if (isNaN(timeInSeconds)) return "00:00";
+        const mins = Math.floor(timeInSeconds / 60);
+        const secs = Math.floor(timeInSeconds % 60);
+        return `${mins.toString().padStart(2, "0")}:${secs
+            .toString()
+            .padStart(2, "0")}`;
+    };
+    
 
-    const EMBED_URL = `https://www.youtube-nocookie.com/embed/${ID_VIDEO}?&controls=0&disablekb=1&enablejsapi=1&iv_load_policy=3&modestbranding=1&playsinline=1&rel=0&showinfo=0&autoplay=0&mute=0&start=0`;
 
-    console.log("esto es embed URL:", EMBED_URL);
 
     return (
 
-
-
         <div>
-
             <div className={`${hiddenVideo ? "hidden h-0" : "fixed top-0 min-h-screen min-w-screen overflow-y-hidden"} bg-black bg-opacity-80`}>
-                <div className='relative'>
+
+                <div className="w-full max-w-2xl mx-auto p-4 bg-gray-900 rounded-xl shadow-lg text-white">
                     <div className='flex justify-between items-center px-4 py-3 text-white'>
                         <button className={`p-2 rounded-md size-8 cursor-pointer`} onClick={() => setHiddenVideo(true)}>
                             <ChevronDown className="size-9 active:text-gray-500" />
@@ -150,21 +222,23 @@ export default function FloatingReproductor() {
                         </button>
 
                     </div>
-
-                    <div className='w-full h-95'>
-
-                        <iframe className="h-full w-full" src={EMBED_URL}>
-                        </iframe>
-
+                    {/* Contenedor del Iframe con protección de clicks nativos */}
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+                        <div id={iframeId} className="w-full h-full pointer-events-none" />
                     </div>
 
-                    <Reproductor callbacks={{ playerAudio, PauseAudio, handlerPlayer, currentTimeFormatted, timeMusicFinish, progressPercentage, handleBarClick }} />
+                    {/* Controles y Línea de Tiempo Personalizados */}
+                    <Reproductor callbacks={{ formatTime, handleTimelineChange, handleTogglePlay }} />
 
 
                 </div>
+
+
             </div>
-            {hiddenVideo ? <div onClick={() => setHiddenVideo(false)} className={`${!hiddenVideo && "hidden h-0"} fixed bottom-0`}><ReproductorMobile /></div> : ""}
+            {hiddenVideo ? <div className={`${!hiddenVideo && "hidden h-0"} fixed bottom-0`}><ReproductorMobile videoId={videoId} handleToggleRepro={handleTogglePlay} isPlaying={isPlaying} hiddenVideo={hiddenVideo} setHiddenVideo={setHiddenVideo} /></div> : ""}
         </div>
+
+
     );
 
 
