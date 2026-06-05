@@ -4,9 +4,7 @@ import Reproductor from '@/app/components/reproductor'
 import ReproductorMobile from '@/app/components/reproductor-mobile'
 
 import { useDataMusicStore, Musica } from "../store/dataMusicStore";
-
-
-import { TextAlignJustify, Play, SkipBack, SkipForward, Heart, Repeat, Pause, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -45,13 +43,16 @@ declare global {
 
 export default function CustomTimelinePlayer() {
 
+    const cancionActual = useDataMusicStore((state) => state.cancionActual);
+    const isPlaying = useDataMusicStore((state) => state.isPlaying);
+    const setIsPlaying = useDataMusicStore((state) => state.setIsPlaying);
+    const setDuration = useDataMusicStore((state) => state.setDuration);
+    const setCurrentTime = useDataMusicStore((state) => state.setCurrentTime);
 
-    const { cancionActual, setCurrentTime, setDuration, setIsPlaying, isPlaying } = useDataMusicStore()
-
-    const videoId = cancionActual?.idMusica || "RYr96YYEaZY"
+    const videoId = cancionActual?.idMusica || "RYr96YYEaZY" //por defecto toma electric love al principio
     console.log("Este es el videoId: ", videoId)
     console.log("Este es el: ", isPlaying)
-    
+
 
 
 
@@ -59,10 +60,12 @@ export default function CustomTimelinePlayer() {
     const playerRef = useRef<YTPlayer | null>(null);
     const iframeId = `yt-player-${videoId}`;
 
-    
+
     const [hiddenVideo, setHiddenVideo] = useState(false); // falso --> video visible, verdadero --> video oculto
 
     useEffect(() => {
+        console.log("Este es el videoId dentro de primer Effect: ", videoId)
+        console.log("Este es el isPlaying dentro de primer Effect: ", isPlaying)
         // Función interna encargada de instanciar el reproductor de forma segura
         const inicializarReproductor = () => {
             if (!window.YT || !window.YT.Player) return; //la api (reproductor) ya se almaceno en windows?
@@ -88,6 +91,9 @@ export default function CustomTimelinePlayer() {
 
                         // Asignamos la duración total de forma segura convirtiéndola a número
                         setDuration(event.target.getDuration() || 0);
+                        setIsPlaying(false) //colocamos que el reproductor no esta reproduciendose cuando carga
+                        event.target.playVideo()
+                        
                     },
                     onStateChange: (event: YTEvent) => {
                         //se ejecuta cada vez que ek estado de reproduccion cambia (pausa, play, etc)
@@ -140,9 +146,8 @@ export default function CustomTimelinePlayer() {
         };
     }, [videoId, iframeId]);
 
-    // Loop encargado de sincronizar tu barra de tiempo (Timeline) en tiempo real
-    // Usamos un throttle para no escribir en el store a alta frecuencia
-    const lastSyncRef = useRef<number>(0);
+
+    // const lastSyncRef = useRef<number>(0);
     // useEffect(() => {
     //     let intervalId: NodeJS.Timeout;
 
@@ -182,19 +187,17 @@ export default function CustomTimelinePlayer() {
         }
     };
 
-    const handleTimelineChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ): void => {
+    const handleTimelineChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const nuevoSegundo = parseFloat(e.target.value); //parsefloat: convierte un string a decimal
         setCurrentTime(nuevoSegundo);
 
         if (playerRef.current && typeof playerRef.current.seekTo === "function") {
             // El segundo parámetro 'true' permite que YouTube cargue el búfer de forma inmediata
-            playerRef.current.seekTo(nuevoSegundo, true);
+            playerRef.current.seekTo(nuevoSegundo, true); //cuando movemos el timeline a un segundo determinado, esto se ejecuta colocando la musica al segundo determinado
         }
     };
 
-    const formatTime = (timeInSeconds: number): string => {
+    const formatTime = (timeInSeconds: number): string => {//fromatear tiempo
         if (isNaN(timeInSeconds)) return "00:00";
         const mins = Math.floor(timeInSeconds / 60);
         const secs = Math.floor(timeInSeconds % 60);
@@ -202,7 +205,7 @@ export default function CustomTimelinePlayer() {
             .toString()
             .padStart(2, "0")}`;
     };
-    
+
 
 
 
@@ -235,7 +238,7 @@ export default function CustomTimelinePlayer() {
 
 
             </div>
-            {hiddenVideo ? <div className={`${!hiddenVideo && "hidden h-0"} fixed bottom-0`}><ReproductorMobile videoId={videoId} handleToggleRepro={handleTogglePlay} isPlaying={isPlaying} hiddenVideo={hiddenVideo} setHiddenVideo={setHiddenVideo} /></div> : ""}
+            {hiddenVideo && cancionActual?.idMusica ? <div className={`${!hiddenVideo && "hidden h-0"} fixed bottom-0`}><ReproductorMobile videoId={videoId} handleToggleRepro={handleTogglePlay} isPlaying={isPlaying} hiddenVideo={hiddenVideo} setHiddenVideo={setHiddenVideo} /></div> : ""}
         </div>
 
 

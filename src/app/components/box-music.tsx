@@ -23,7 +23,13 @@ interface CancionData {
 export default function BoxMusic({ musicaData }: CancionData) {
 
 
-    const { setCancionActual } = useDataMusicStore()
+    const setCancionActual = useDataMusicStore((state) => state.setCancionActual);
+    const setIsPlaying = useDataMusicStore((state) => state.setIsPlaying);
+
+    const handlerReproduction = () => {
+        setCancionActual(musicaData)
+        setIsPlaying(true)
+    }
 
 
 
@@ -31,7 +37,7 @@ export default function BoxMusic({ musicaData }: CancionData) {
 
     return (
 
-        <div className={`snap-start shrink-0`} onClick={() => setCancionActual(musicaData)}> {/**me mandas los datos de este box si se hace click para reproducir la musica */}
+        <div className={`snap-start shrink-0`} onClick={() => handlerReproduction()} > {/**me mandas los datos de este box si se hace click para reproducir la musica */}
             <div className="relative w-full min-h-50">
                 <Image
                     src={`https://img.youtube.com/vi/${musicaData.idMusica}/maxresdefault.jpg`}

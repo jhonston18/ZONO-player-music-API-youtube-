@@ -25,6 +25,7 @@ interface ReproductorMobileProps {
 export default function ReproductorMobile({handleToggleRepro, hiddenVideo, setHiddenVideo }: ReproductorMobileProps) {
 
     const { cancionActual, isPlaying } = useDataMusicStore()
+    console.log("El mobile player el id es: ", cancionActual?.idMusica)
 
     // const id = 'RYr96YYEaZY'; // Reemplaza con el ID de tu video de YouTube
 
