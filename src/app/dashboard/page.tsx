@@ -1,18 +1,14 @@
 
 
 import MiMusicaScroll from "../components/mi-musica-scroll";
-import GET_DATA_MUSIC from "@/app/api/data-content/dataContent";
+
 import CustomTimelinePlayer from "@/app/components/floating-reproductor";
-import {useDataMusicStore} from '@/app/store/dataMusicStore'
 
 
+import AddMusic from "../components/addMusic"
 
 export default async function Dashboard() {
 
-    
-    const id = "EdgkWykbvpw"
-
-    const data = await GET_DATA_MUSIC(id);
 
     const datos1 = [
         {idMusica: "EdgkWykbvpw", nombreMusica: "Amor de Dios", idCategoria: "", duracion: "", idArtista: "Hector Rodrigues"},
@@ -44,15 +40,7 @@ export default async function Dashboard() {
                 <div className="text-2xl font-bold">
                     <h1>Mi Música</h1>
                 </div>
-                <div>
-                    <button className="p-2 bg-blue-600 mx-2 rounded-xl">Agregar Link</button>
-                    <button className="p-2 border border-gray-400 mx-2 rounded-xl">Agregar musica local</button>
-
-                </div>
-
-                <div className="">
-                    <input className="p-2 w-full border border-gray-400 outline-none rounded-xl" type="text" placeholder="Ingresa el link de youtube de la musica que quieres escuchar" />
-                </div>
+                <AddMusic/>
 
                 <MiMusicaScroll data={datos1} />
                 <MiMusicaScroll data={datos2} />

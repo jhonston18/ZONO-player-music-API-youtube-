@@ -33,6 +33,14 @@ CREATE TABLE Musicas(
   
 )
 
+CREATE TABLE MusicaUsuario (
+  idMusicaUsuario: INT PRIMARY KEY NOT NULL,
+  nombreMusicaUsuario: VARCHAR(100),
+  duracion INT NOT NULL,
+  fechaAgreg DATETIME DEFAULT GETDATE(),
+  idArtista INT NOT NULL, -- FOREIGN KEY
+)
+
 
 
 CREATE TABLE CancionArtistas(
