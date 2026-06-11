@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useDataMusicStore, Musica } from "../store/dataMusicStore";
 
 import { Geist, Montserrat, DM_Sans, Outfit } from "next/font/google";
-import GET_DATA_MUSIC from "../api/data-content/dataContent";
+
 
 
 const montserrat = Outfit({

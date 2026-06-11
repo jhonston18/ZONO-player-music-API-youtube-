@@ -5,7 +5,10 @@ import { useDataMusicStore, Musica } from "../store/dataMusicStore";
 
 export default function Reproductor({ callbacks }) {
 
-    const {currentTime, duration, isPlaying} = useDataMusicStore()
+    const currentTime = useDataMusicStore((state) => state.currentTime)
+    const duration = useDataMusicStore((state) => state.duration)
+    const isPlaying = useDataMusicStore((state) => state.isPlaying)
+    const cancionActual = useDataMusicStore((state) => state.cancionActual)
 
 
     const { 
@@ -21,7 +24,7 @@ export default function Reproductor({ callbacks }) {
         <div className='flex flex-col gap-5 mx-6 my-6'>
             <div>
                 <span className='block text-sm text-gray-300 uppercase tracking-wider font-bold'>Canal</span>
-                <p className='text-xl font-semibold'>Lana del rey - Salvatore (lyrics)</p>
+                <p className='text-xl font-semibold'>{cancionActual?.nombreMusica}</p>
             </div>
 
             <div className="flex items-center space-x-2">
