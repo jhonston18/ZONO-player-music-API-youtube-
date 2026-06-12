@@ -68,44 +68,73 @@ export async function GET_DATA_VIDEO(videoId) {
 }
 
 
-let musicas;
-let categorias;
-let artistas;
-let musicaArtistas;
 
 
-export function ADD_CATEGORY(idCategoria, nombreCategoria) {
+export function ADD_CATEGORY(idCategoria, nombreCategoria) { //se deberia de pasar solo el nombre de la categoria
+
+    if(!nombreCategoria) return NextResponse.json({error: "El parametro idCategoria y nombreCategoria es requerido"})
+
     const { Categorias } = getSchemas()
-    categorias = Categorias.create({
+
+    //quitar la segunda condicion ya que en sql no pondremos manualmente el idCategoria
+    const existe = Categorias.findOne(categoria => (categoria.nombreCategoria === nombreCategoria) && (categoria.idCategoria === idCategoria)) 
+
+    if(existe) return NextResponse.json({message: "El artista ya existe en la base de datos"}, {status: 404})
+
+
+    Categorias.create({
         idCategoria: Number(idCategoria),
         nombreCategoria: nombreCategoria
     }).save()
 }
 
 export function ADD_ARTISTAS(idArtista, nombreArtista) {
+
+    if(!nombreArtista) return NextResponse.json({error: "El parametro idArtista y nombreArtista es requerido"})
+
     const { Artistas } = getSchemas()
-    artistas = Artistas.create({
+    
+    //quitar la segunda condicion ya que en sql no pondremos manualmente el idCategoria
+    const existe = Artistas.findOne(artista => (artista.nombreArtista === nombreArtista) && (artista.idArtista === idArtista))
+
+    if(existe) return NextResponse.json({message: "El artista ya existe en la base de datos"}, {status: 404})
+
+
+    Artistas.create({
         idArtista: Number(idArtista),
         nombreArtista: nombreArtista
     }).save()
 }
 
 export function ADD_MUSICA(idMusica, idCategoria, duration, idArtista, nombreMusica) {
+
+    //console.log("Este es le valor de id de ADD_MUSICA: ", idMusica)
+
+    if(!idMusica) return NextResponse.json({error: "El parametro idMusica es requerido"})
+
     const { Musicas } = getSchemas()
-    musicas = Musicas.create({
+
+    
+    const existe = Musicas.findOne(musica => musica.idMusica === idMusica)
+
+    if(existe) return NextResponse.json({message: "Musica no existe en la base de datos"}, {status: 404})
+    
+    Musicas.create({
         idMusica: idMusica,
         nombreMusica: nombreMusica,
         idCategoria: Number(idCategoria),
         duration: Number(duration),
         idArtista: Number(idArtista)
     }).save()
+
+    return NextResponse.json({message: "Musica añadido a la base de datos correctamente"}, {status: 200})
 }
 
 
 
 export function ADD_MUSICA_ARTISTAS(idMusica, idArtista) {
     const { MusicasArtistas } = getSchemas()
-    musicaArtistas = MusicasArtistas.create({
+    MusicasArtistas.create({
         idMusica: idMusica,
         idArtista: Number(idArtista)
     }).save()
@@ -145,16 +174,17 @@ export function DELETE_MUSIC(idMusica){
 
     console.log("Este es le valor de id de DELETE_MUSICA: ", idMusica)
 
-    if(!idMusica) NextResponse.error({"Error: ": "El parametro idMusica es undefined"})
+    if(!idMusica) return NextResponse.json({error: "El parametro idMusica es requerido"})
 
     const { Musicas } = getSchemas()
 
-    const existe = Musicas.find({idMusica: idMusica})
+    const existe = Musicas.findOne(musica => musica.idMusica === idMusica)
+
     console.log("Este es  el valor de existe: ", existe)
 
-    if(!existe || existe.length === 0) return NextResponse.json({message: "Musica no existe en la base de datos"}, {status: 400})
+    if(existe) return NextResponse.json({message: "Musica no existe en la base de datos"}, {status: 404})
 
-    Musicas.remove({idMusica: idMusica})
+    Musicas.remove(musica => musica.idMusica === idMusica) //Musicas.remove({idMusica: idMusica}) <-- esto tambien es valido?
 
     return NextResponse.json({message: "Musica eliminado correctamente"}, {status: 200})
 }
