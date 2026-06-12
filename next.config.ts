@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  // Esto le dice a Next.js que ejecute db-local directamente en Node.js sin procesarlo con Webpack
+  serverExternalPackages: ['db-local'],
 };
 
 export default nextConfig;
