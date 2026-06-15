@@ -3,6 +3,7 @@ import MiMusicaScroll from "../components/mi-musica-scroll";
 
 import CustomTimelinePlayer from "@/app/components/floating-reproductor";
 import axios from 'axios'
+import Image from "next/image";
 
 
 import AddMusic from "../components/addMusic"
@@ -10,10 +11,10 @@ import { useEffect, useState } from "react";
 
 export default function Dashboard() {
 
-    
+
 
     interface Songs {
-        
+
         id_Video: number,
         name_Music: string,
         name_Category: string,
@@ -31,7 +32,7 @@ export default function Dashboard() {
     const [categorys, setCategories] = useState<DashboardMusic>()
 
     useEffect(() => {
-        
+
         (async () => {
             console.log("Pidiendo datos")
 
@@ -46,7 +47,7 @@ export default function Dashboard() {
 
     }, [])
 
-    
+
 
 
 
@@ -79,14 +80,18 @@ export default function Dashboard() {
 
     return (
         <div>
-            <div className="flex flex-col gap-4 p-5 mb-20">
-                <div className="text-2xl font-bold">
-                    <h1>Mi Música</h1>
+            <div className=" flex flex-col gap-4 p-5 mb-20">
+
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <div className="w-25 text-2xl font-bold">
+                        <img className='w-full' src="/zono-favicon.png" alt="zono-logo" />
+                    </div>
+                    <AddMusic />
                 </div>
-                <AddMusic />
+
 
                 {categorys?.map((category, idx) => (
-                    
+
                     <div key={idx}>
                         <MiMusicaScroll categorys={category.category} musicas={category.songs} />
                     </div>

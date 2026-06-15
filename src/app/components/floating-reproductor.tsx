@@ -36,6 +36,7 @@ declare global {
             PlayerState: {
                 PLAYING: number;
                 PAUSED: number;
+                ENDED: number;
             };
         };
     }
@@ -49,60 +50,57 @@ export default function CustomTimelinePlayer() {
     const setDuration = useDataMusicStore((state) => state.setDuration);
     const setCurrentTime = useDataMusicStore((state) => state.setCurrentTime);
 
-    const videoId = cancionActual?.id_Video || "RYr96YYEaZY" //por defecto toma electric love al principio
+    const videoId = cancionActual?.id_Video;
     console.log("Este es el videoId: ", videoId)
-    console.log("Este es el: ", isPlaying)
+    console.log("Este es el isPlaying: ", isPlaying)
 
 
 
 
     // Guardamos la referencia del reproductor con su tipo correcto
     const playerRef = useRef<YTPlayer | null>(null);
-    const iframeId = `yt-player-${videoId}`;
+    const iframeId = videoId ? `yt-player-${videoId}` : 'yt-player-placeholder';
 
 
-    const [hiddenVideo, setHiddenVideo] = useState(false); // falso --> video visible, verdadero --> video oculto
+    const [hiddenVideo, setHiddenVideo] = useState(true); // falso --> video visible, verdadero --> video oculto
 
     useEffect(() => {
+        
+        if (!videoId) return;
+
         console.log("Este es el videoId dentro de primer Effect: ", videoId)
         console.log("Este es el isPlaying dentro de primer Effect: ", isPlaying)
         // Función interna encargada de instanciar el reproductor de forma segura
         const inicializarReproductor = () => {
-            if (!window.YT || !window.YT.Player) return; //la api (reproductor) ya se almaceno en windows?
+            if (!window.YT || !window.YT.Player) return;
 
-            //recibe dos parametros, el id del elemento html (reproductor) y un onjeto de configuracion
             playerRef.current = new window.YT.Player(iframeId, {
-                //creamos el reproductor
-                videoId: videoId, //el id del video a cargar
+                videoId: videoId,
                 playerVars: {
-                    //objeto para personalizar el reproductor
-                    controls: 0, // Oculta los controles nativos
-                    disablekb: 1, // Desactiva el teclado nativo
-                    modestbranding: 1, // Reduce la marca de YouTube
-                    rel: 0, // Evita videos recomendados de otros canales
-                    enablejsapi: 1, // ¡CRÍTICO! Permite leer tiempos y usar comandos
-                    playsinline: 1, // Evita pantalla completa automática en móviles
+                    controls: 0,
+                    disablekb: 1,
+                    modestbranding: 1,
+                    rel: 0,
+                    enablejsapi: 1,
+                    playsinline: 1,
+                    autoplay: 0,
                 },
                 events: {
-                    //objeto que almacena funciones de devolucion de llamada cuando interacturamos con el reproductor
-
                     onReady: (event: YTEvent) => {
-                        //se ejecuta cuando el reproductor ya cargo y esta listo para recibir comando
-
-                        // Asignamos la duración total de forma segura convirtiéndola a número
+                        event.target.playVideo();
                         setDuration(event.target.getDuration() || 0);
-                        setIsPlaying(false) //colocamos que el reproductor no esta reproduciendose cuando carga
-                        event.target.playVideo()
-                        
                     },
                     onStateChange: (event: YTEvent) => {
-                        //se ejecuta cada vez que ek estado de reproduccion cambia (pausa, play, etc)
+                        
                         if (!window.YT) return;
-                        // Evaluamos los estados del reproductor
+
                         if (event.data === window.YT.PlayerState.PLAYING) {
-                            // el reproductor esta reproduciendose?
-                            setIsPlaying(true); //actualizamos el estado a "si se esta reproduciendo el video"
-                        } else {
+                            
+                            setIsPlaying(true);
+                        } else if (
+                            event.data === window.YT.PlayerState.PAUSED ||
+                            event.data === window.YT.PlayerState.ENDED
+                        ) {
                             setIsPlaying(false);
                         }
                     },
@@ -110,41 +108,42 @@ export default function CustomTimelinePlayer() {
             });
         };
 
-        // Control de carga del Script: Evita que la función se pierda por asincronía
         if (window.YT && window.YT.Player) {
-            // Si el script de YouTube ya existía en el navegador, inicializamos directo
             inicializarReproductor();
         } else {
-            // Si el script no existe, lo inyectamos dinámicamente
-            if (
-                !document.querySelector(
-                    'script[src="https://www.youtube.com/iframe_api"]'
-                )
-            ) {
+            if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
                 const tag = document.createElement("script");
                 tag.src = "https://www.youtube.com/iframe_api";
-                const firstScriptTag = document.getElementsByTagName("script")[0]; //tomamos el primer script (padre)
-                firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag); //tomamos el elemento padre y
-                //colocamos el script nuevo (tag) justo despues del elemento anterior (firstScriptTag)
+                const firstScriptTag = document.getElementsByTagName("script")[0];
+                firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
             }
 
-            // Seteamos la función global por si el script termina de cargar después
             window.onYouTubeIframeAPIReady = () => {
                 inicializarReproductor();
             };
         }
 
-        // Limpieza al desmontar el componente (Evita fugas de memoria en Next.js)
         return () => {
-            if (
-                playerRef.current &&
-                typeof playerRef.current.destroy === "function"
-            ) {
+            if (playerRef.current && typeof playerRef.current.destroy === "function") {
                 playerRef.current.destroy();
                 playerRef.current = null;
             }
         };
     }, [videoId, iframeId]);
+
+    useEffect(() => {
+        if (!playerRef.current) return;
+
+        if (isPlaying) {
+            if (typeof playerRef.current.playVideo === "function") {
+                playerRef.current.playVideo();
+            }
+        } else {
+            if (typeof playerRef.current.pauseVideo === "function") {
+                playerRef.current.pauseVideo();
+            }
+        }
+    }, [isPlaying]);
 
 
     // const lastSyncRef = useRef<number>(0);

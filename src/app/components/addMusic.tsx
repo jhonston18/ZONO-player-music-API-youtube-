@@ -16,7 +16,7 @@ export default function AddMusic() {
 
     const conincidencia = valueInput.match(regexLink)
 
-    const linkVideo = conincidencia?conincidencia[1] : ""
+    const linkVideo = conincidencia ? conincidencia[1] : ""
 
     console.log("El link del video desde el input: ", linkVideo)
 
@@ -25,18 +25,19 @@ export default function AddMusic() {
 
 
     return (
-        <div>
 
 
-            <div className="">
-                <input className="p-2 w-full border border-gray-400 outline-none rounded-xl"
-                    type="text"
-                    placeholder="Ingresa el link de youtube de la musica que quieres escuchar"
-                    onChange={handleChangeInput}
-                    value={valueInput}
-                />
-            </div>
+
+        <div className="w-full flex gap-2 ">
+            <input className="w-full p-2 border border-gray-400 outline-none rounded-xl"
+                type="text"
+                placeholder="Ingresa el link de youtube de la musica que quieres escuchar"
+                onChange={handleChangeInput}
+                value={valueInput}
+            />
             <button className="p-2 my-2 bg-blue-600 mx-2 rounded-xl">Agregar</button>
         </div>
+
+
     )
 }
