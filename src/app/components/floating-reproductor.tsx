@@ -49,7 +49,7 @@ export default function CustomTimelinePlayer() {
     const setDuration = useDataMusicStore((state) => state.setDuration);
     const setCurrentTime = useDataMusicStore((state) => state.setCurrentTime);
 
-    const videoId = cancionActual?.idMusica || "RYr96YYEaZY" //por defecto toma electric love al principio
+    const videoId = cancionActual?.id_Video || "RYr96YYEaZY" //por defecto toma electric love al principio
     console.log("Este es el videoId: ", videoId)
     console.log("Este es el: ", isPlaying)
 
@@ -238,7 +238,7 @@ export default function CustomTimelinePlayer() {
 
 
             </div>
-            {hiddenVideo && cancionActual?.idMusica ? <div className={`${!hiddenVideo && "hidden h-0"} fixed bottom-0`}><ReproductorMobile videoId={videoId} handleToggleRepro={handleTogglePlay} isPlaying={isPlaying} hiddenVideo={hiddenVideo} setHiddenVideo={setHiddenVideo} /></div> : ""}
+            {hiddenVideo && cancionActual?.id_Video ? <div className={`${!hiddenVideo && "hidden h-0"} fixed bottom-0`}><ReproductorMobile handleToggleRepro={handleTogglePlay} hiddenVideo={hiddenVideo} setHiddenVideo={setHiddenVideo} /></div> : ""}
         </div>
 
 

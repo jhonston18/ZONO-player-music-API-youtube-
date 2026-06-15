@@ -1,14 +1,14 @@
 
 
 
-import {create} from 'zustand'
+import { create } from 'zustand'
 
 export interface Musica {
-    idMusica: string,
-    nombreMusica: string,
-    idCategoria: string,
-    duracion: string,
-    idArtista: string
+    id_Video: number,
+    name_Music: string,
+    category: string,
+    name_Singer: String
+
 }
 
 
@@ -25,7 +25,7 @@ export interface ReproductorState {
     setCurrentTime: (time: number) => void
     setDuration: (dur: number) => void
 
-    
+
 }
 
 export const useDataMusicStore = create<ReproductorState>((set) => ({ //set para actualizar y get para obtener datos
@@ -39,10 +39,10 @@ export const useDataMusicStore = create<ReproductorState>((set) => ({ //set para
 
     //para actualizar el play
     setIsPlaying: (playing) => set({ isPlaying: playing }),
-    setPause: (playing) => set({isPlaying: false}),
-    togglePlay: () => set((state) => ({isPlaying: !state.isPlaying})),
-    setCurrentTime: (time) => set({currentTime: time}),
-    setDuration: (dur) => set({duration: dur})
+    setPause: (playing) => set({ isPlaying: false }),
+    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+    setCurrentTime: (time) => set({ currentTime: time }),
+    setDuration: (dur) => set({ duration: dur })
 
 
 }))
