@@ -3,10 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { getConnection } from '@/lib/db';
 
-
-
 export default async function GET_MUSIC_CATEGORIES() {
-
 
   try {
     const pool = await getConnection();
@@ -42,7 +39,5 @@ export default async function GET_MUSIC_CATEGORIES() {
     console.error("Erro en la peticion desde la api: ", error);
     throw error;
   }
-
-
 
 }
